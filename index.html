@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>InvenFlow – Inventory & Sales System</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:#0d0f14; --surface:#151820; --surface2:#1c2030;
+    --border:#252a3a; --accent:#4ef0a0; --accent2:#4d9fff;
+    --warn:#ff6b6b; --yellow:#ffd166; --text:#e8eaf0; --muted:#6b7280; --r:12px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'DM Mono',monospace;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;background:var(--surface);border-bottom:1px solid var(--border);}
+  .logo{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:var(--accent);display:flex;align-items:center;gap:8px;}
+  .logo span{color:var(--text);}
+  .nav{display:flex;gap:6px;}
+  .nav button{background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'DM Mono',monospace;font-size:12px;padding:6px 14px;border-radius:8px;cursor:pointer;transition:all .2s;}
+  .nav button.active,.nav button:hover{background:var(--accent);color:#000;border-color:var(--accent);font-weight:500;}
+
+  .app{display:flex;flex:1;height:calc(100vh - 57px);}
+  .sidebar{width:260px;background:var(--surface);border-right:1px solid var(--border);padding:20px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;}
+  .sidebar-label{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin:12px 0 4px;}
+  .product-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:12px;transition:all .2s;}
+  .product-card .pname{font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px;}
+  .product-card .pmeta{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);}
+  .stock-badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:20px;font-weight:500;}
+  .stock-ok{background:#1a2e22;color:var(--accent);}
+  .stock-low{background:#2e2a14;color:var(--yellow);}
+  .stock-out{background:#2e1a1a;color:var(--warn);}
+
+  .main{flex:1;overflow-y:auto;padding:28px;display:flex;flex-direction:column;gap:24px;}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;}
+  .panel-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--text);margin-bottom:20px;display:flex;align-items:center;gap:10px;}
+  .panel-title .tag{font-family:'DM Mono',monospace;font-size:10px;background:var(--surface2);color:var(--muted);padding:3px 8px;border-radius:6px;font-weight:400;border:1px solid var(--border);}
+
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .form-group{display:flex;flex-direction:column;gap:6px;}
+  .form-group.full{grid-column:1/-1;}
+  label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+  input,select{background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:10px 14px;outline:none;transition:border-color .2s;width:100%;}
+  input:focus,select:focus{border-color:var(--accent2);}
+  select option{background:var(--surface2);}
+  .err-msg{font-size:11px;color:var(--warn);margin-top:2px;min-height:16px;}
+
+  .btn{border:none;border-radius:8px;font-family:'DM Mono',monospace;font-size:13px;font-weight:500;padding:10px 20px;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:7px;}
+  .btn-primary{background:var(--accent);color:#000;}
+  .btn-primary:hover{opacity:.85;transform:translateY(-1px);}
+  .btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+  .btn-secondary:hover{border-color:var(--accent2);}
+  .btn-row{display:flex;gap:10px;margin-top:16px;}
+
+  .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  .stat-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:16px;}
+  .stat-card .slabel{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:6px;}
+  .stat-card .sval{font-family:'Syne',sans-serif;font-size:26px;font-weight:700;color:var(--accent);}
+
+  .search-row{display:flex;gap:10px;margin-bottom:16px;}
+  .search-row input{flex:1;}
+  .ptable{width:100%;border-collapse:collapse;font-size:13px;}
+  .ptable th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);padding:8px 12px;border-bottom:1px solid var(--border);}
+  .ptable td{padding:10px 12px;border-bottom:1px solid var(--border);}
+  .ptable tr:last-child td{border-bottom:none;}
+  .ptable tbody tr{cursor:pointer;transition:background .15s;}
+  .ptable tbody tr:hover{background:var(--surface2);}
+  .ptable tbody tr.sel-row{background:#1a2e22;}
+
+  .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center;}
+  .modal-bg.show{display:flex;}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;width:420px;max-width:95vw;}
+  .modal-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:20px;}
+  .receipt-box{background:var(--surface2);border:1px dashed var(--border);border-radius:var(--r);padding:18px 22px;font-size:12px;line-height:2;}
+  .receipt-row{display:flex;justify-content:space-between;}
+  .receipt-row.total{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--accent);border-top:1px solid var(--border);margin-top:8px;padding-top:8px;}
+
+  .toast-container{position:fixed;top:20px;right:20px;display:flex;flex-direction:column;gap:10px;z-index:999;}
+  .toast{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 18px;font-size:13px;display:flex;align-items:center;gap:10px;animation:slideIn .3s ease,fadeOut .4s 2.6s forwards;min-width:260px;}
+  .toast.success{border-color:var(--accent);}
+  .toast.error{border-color:var(--warn);}
+  .toast.info{border-color:var(--accent2);}
+  @keyframes slideIn{from{transform:translateX(120%);opacity:0}to{transform:none;opacity:1}}
+  @keyframes fadeOut{to{opacity:0;transform:translateX(120%)}}
+
+  .page{display:none;flex-direction:column;gap:24px;}
+  .page.active{display:flex;}
+  .history-empty{text-align:center;color:var(--muted);padding:30px;font-size:13px;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">📦 <span>InvenFlow</span></div>
+  <div class="nav">
+    <button class="active" onclick="showPage('add')">Add Product</button>
+    <button onclick="showPage('sale')">Process Sale</button>
+    <button onclick="showPage('history')">Sales History</button>
+  </div>
+</div>
+
+<div class="app">
+  <div class="sidebar">
+    <div class="sidebar-label">Inventory</div>
+    <div id="sidebarList"></div>
+  </div>
+
+  <div class="main">
+
+    <!-- ADD PRODUCT -->
+    <div class="page active" id="page-add">
+      <div class="stats-row">
+        <div class="stat-card"><div class="slabel">Total Products</div><div class="sval" id="statProducts">0</div></div>
+        <div class="stat-card"><div class="slabel">Total Stock</div><div class="sval" id="statStock">0</div></div>
+        <div class="stat-card"><div class="slabel">Total Revenue</div><div class="sval" id="statRevenue">$0</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Add New Product <span class="tag">Activity Diagram 1</span></div>
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>Product Name</label>
+            <input type="text" id="pName" placeholder="e.g. Laptop Pro 15"/>
+            <div class="err-msg" id="errName"></div>
+          </div>
+          <div class="form-group">
+            <label>Price ($)</label>
+            <input type="number" id="pPrice" placeholder="0.00" min="0" step="0.01"/>
+            <div class="err-msg" id="errPrice"></div>
+          </div>
+          <div class="form-group">
+            <label>Stock Quantity</label>
+            <input type="number" id="pStock" placeholder="0" min="0" step="1"/>
+            <div class="err-msg" id="errStock"></div>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="addProduct()">＋ Add Product</button>
+          <button class="btn btn-secondary" onclick="clearAddForm()">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROCESS SALE -->
+    <div class="page" id="page-sale">
+      <div class="panel">
+        <div class="panel-title">Search & Select Product <span class="tag">Activity Diagram 2</span></div>
+        <div class="search-row">
+          <input type="text" id="searchInput" placeholder="Search by name or ID..." oninput="renderSaleTable()"/>
+        </div>
+        <table class="ptable">
+          <thead><tr><th>ID</th><th>Name</th><th>Price</th><th>Stock</th><th>Status</th></tr></thead>
+          <tbody id="saleTable"></tbody>
+        </table>
+      </div>
+      <div class="panel" id="saleFormPanel" style="display:none">
+        <div class="panel-title" id="saleFormTitle">Configure Sale</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Quantity</label>
+            <input type="number" id="saleQty" placeholder="1" min="1"/>
+            <div class="err-msg" id="errQty"></div>
+          </div>
+          <div class="form-group">
+            <label>Payment Method</label>
+            <select id="payMethod">
+              <option value="">-- Select --</option>
+              <option>Cash</option>
+              <option>Credit Card</option>
+              <option>Bank Transfer</option>
+            </select>
+            <div class="err-msg" id="errPay"></div>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="processSale()">⚡ Process Sale</button>
+          <button class="btn btn-secondary" onclick="cancelSale()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SALES HISTORY -->
+    <div class="page" id="page-history">
+      <div class="panel">
+        <div class="panel-title">Sales History</div>
+        <div id="historyContent"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- RECEIPT MODAL -->
+<div class="modal-bg" id="receiptModal">
+  <div class="modal">
+    <div class="modal-title">🧾 Receipt</div>
+    <div class="receipt-box" id="receiptContent"></div>
+    <div class="btn-row" style="margin-top:20px">
+      <button class="btn btn-primary" onclick="closeReceipt()">Done</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toasts"></div>
+
+<script>
+let state = {
+  products: [
+    {id:"A1B2C3D4",name:"Laptop Pro",price:1299.99,stock:15,created:"2026-04-01"},
+    {id:"E5F6G7H8",name:"Wireless Mouse",price:49.99,stock:3,created:"2026-04-02"},
+    {id:"I9J0K1L2",name:"USB-C Hub",price:79.99,stock:0,created:"2026-04-03"},
+  ],
+  sales:[],
+  selectedProductId:null
+};
+
+function showPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('.nav button').forEach((b,i)=>{
+    b.classList.remove('active');
+    if(['add','sale','history'][i]===name) b.classList.add('active');
+  });
+  if(name==='sale'){state.selectedProductId=null;renderSaleTable();document.getElementById('saleFormPanel').style.display='none';}
+  if(name==='history') renderHistory();
+  renderSidebar();updateStats();
+}
+
+function toast(msg,type='success'){
+  const icons={success:'✅',error:'❌',info:'ℹ️'};
+  const el=document.createElement('div');
+  el.className=`toast ${type}`;
+  el.innerHTML=`<span>${icons[type]}</span><span>${msg}</span>`;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(()=>el.remove(),3100);
+}
+
+function renderSidebar(){
+  const el=document.getElementById('sidebarList');
+  if(!state.products.length){el.innerHTML='<div style="color:var(--muted);font-size:12px">No products yet.</div>';return;}
+  el.innerHTML=state.products.map(p=>{
+    const sc=p.stock===0?'stock-out':p.stock<=5?'stock-low':'stock-ok';
+    const sl=p.stock===0?'Out':p.stock<=5?'Low':'OK';
+    return `<div class="product-card">
+      <div class="pname">${p.name}</div>
+      <div class="pmeta"><span>$${p.price.toFixed(2)}</span><span class="stock-badge ${sc}">${sl} · ${p.stock}</span></div>
+    </div>`;
+  }).join('');
+}
+
+function updateStats(){
+  document.getElementById('statProducts').textContent=state.products.length;
+  document.getElementById('statStock').textContent=state.products.reduce((a,p)=>a+p.stock,0);
+  const rev=state.sales.reduce((a,s)=>a+s.total,0);
+  document.getElementById('statRevenue').textContent='$'+rev.toFixed(0);
+}
+
+// ADD PRODUCT — Activity Diagram 1
+function addProduct(){
+  const name=document.getElementById('pName').value.trim();
+  const priceStr=document.getElementById('pPrice').value.trim();
+  const stockStr=document.getElementById('pStock').value.trim();
+  let valid=true;
+  document.getElementById('errName').textContent='';
+  document.getElementById('errPrice').textContent='';
+  document.getElementById('errStock').textContent='';
+
+  // Validate Product Data
+  if(!name){document.getElementById('errName').textContent='Product name cannot be empty.';valid=false;}
+  const price=parseFloat(priceStr);
+  if(!priceStr||isNaN(price)||price<=0){document.getElementById('errPrice').textContent='Enter a valid positive price.';valid=false;}
+  const stock=parseInt(stockStr);
+  if(!stockStr||isNaN(stock)||stock<0){document.getElementById('errStock').textContent='Enter a valid non-negative stock.';valid=false;}
+  if(!valid){toast('Validation error. Please fix the fields.','error');return;}
+
+  // Check Product Duplication
+  const dup=state.products.find(p=>p.name.toLowerCase()===name.toLowerCase());
+  if(dup){toast(`"${name}" already exists! (ID: ${dup.id})`,'error');return;}
+
+  // Save Product & Update Inventory Stock
+  const id=Math.random().toString(36).substr(2,8).toUpperCase();
+  state.products.push({id,name,price,stock,created:new Date().toISOString().slice(0,10)});
+  toast(`"${name}" added successfully!`,'success');
+  clearAddForm();renderSidebar();updateStats();
+}
+
+function clearAddForm(){
+  ['pName','pPrice','pStock'].forEach(id=>document.getElementById(id).value='');
+  ['errName','errPrice','errStock'].forEach(id=>document.getElementById(id).textContent='');
+}
+
+// PROCESS SALE — Activity Diagram 2
+function renderSaleTable(){
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  const filtered=state.products.filter(p=>p.name.toLowerCase().includes(q)||p.id.toLowerCase().includes(q));
+  const tbody=document.getElementById('saleTable');
+  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">No products found.</td></tr>`;return;}
+  tbody.innerHTML=filtered.map(p=>{
+    const sc=p.stock===0?'stock-out':p.stock<=5?'stock-low':'stock-ok';
+    const sl=p.stock===0?'Out of Stock':p.stock<=5?`Low (${p.stock})`:`In Stock (${p.stock})`;
+    const sel=state.selectedProductId===p.id?'sel-row':'';
+    return `<tr class="${sel}" onclick="selectProduct('${p.id}')">
+      <td style="color:var(--muted);font-size:11px">${p.id}</td>
+      <td style="font-weight:500">${p.name}</td>
+      <td>$${p.price.toFixed(2)}</td>
+      <td>${p.stock}</td>
+      <td><span class="stock-badge ${sc}">${sl}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function selectProduct(id){
+  state.selectedProductId=id;
+  const p=state.products.find(x=>x.id===id);
+  document.getElementById('saleFormTitle').textContent=`Configure Sale — ${p.name}`;
+  document.getElementById('saleFormPanel').style.display='block';
+  document.getElementById('saleQty').value='';
+  document.getElementById('payMethod').value='';
+  document.getElementById('errQty').textContent='';
+  document.getElementById('errPay').textContent='';
+  renderSaleTable();
+}
+
+function cancelSale(){
+  state.selectedProductId=null;
+  document.getElementById('saleFormPanel').style.display='none';
+  renderSaleTable();
+}
+
+function processSale(){
+  const product=state.products.find(p=>p.id===state.selectedProductId);
+  if(!product){toast('Select a product first.','error');return;}
+  const qtyStr=document.getElementById('saleQty').value;
+  const method=document.getElementById('payMethod').value;
+  let valid=true;
+  document.getElementById('errQty').textContent='';
+  document.getElementById('errPay').textContent='';
+  const qty=parseInt(qtyStr);
+  if(!qtyStr||isNaN(qty)||qty<=0){document.getElementById('errQty').textContent='Enter a valid quantity.';valid=false;}
+  if(!method){document.getElementById('errPay').textContent='Select a payment method.';valid=false;}
+  if(!valid){toast('Please fill in all fields.','error');return;}
+
+  // Check Stock Availability
+  if(product.stock<qty){
+    if(product.stock===0) toast(`"${product.name}" is out of stock.`,'error');
+    else toast(`Insufficient stock! Available: ${product.stock} units.`,'error');
+    return;
+  }
+
+  // Process Payment & Generate Receipt
+  const total=product.price*qty;
+  const saleId=Math.random().toString(36).substr(2,8).toUpperCase();
+  const date=new Date().toLocaleString();
+
+  // Update Stock & Record Sale
+  product.stock-=qty;
+  state.sales.push({saleId,productId:product.id,productName:product.name,qty,unitPrice:product.price,total,method,date});
+
+  document.getElementById('receiptContent').innerHTML=`
+    <div class="receipt-row"><span>Receipt No</span><span>${saleId}</span></div>
+    <div class="receipt-row"><span>Date</span><span>${date}</span></div>
+    <div class="receipt-row"><span>Product</span><span>${product.name}</span></div>
+    <div class="receipt-row"><span>Quantity</span><span>${qty} units</span></div>
+    <div class="receipt-row"><span>Unit Price</span><span>$${product.price.toFixed(2)}</span></div>
+    <div class="receipt-row"><span>Payment</span><span>${method}</span></div>
+    <div class="receipt-row total"><span>Total</span><span>$${total.toFixed(2)}</span></div>`;
+  document.getElementById('receiptModal').classList.add('show');
+  toast('Sale completed successfully!','success');
+  cancelSale();renderSidebar();updateStats();
+}
+
+function closeReceipt(){document.getElementById('receiptModal').classList.remove('show');}
+
+function renderHistory(){
+  const el=document.getElementById('historyContent');
+  if(!state.sales.length){el.innerHTML='<div class="history-empty">No sales recorded yet.</div>';return;}
+  const rev=state.sales.reduce((a,s)=>a+s.total,0);
+  el.innerHTML=`
+    <table class="ptable" style="margin-bottom:16px">
+      <thead><tr><th>Sale ID</th><th>Product</th><th>Qty</th><th>Total</th><th>Method</th><th>Date</th></tr></thead>
+      <tbody>${state.sales.slice().reverse().map(s=>`<tr>
+        <td style="color:var(--muted);font-size:11px">${s.saleId}</td>
+        <td>${s.productName}</td><td>${s.qty}</td>
+        <td style="color:var(--accent)">$${s.total.toFixed(2)}</td>
+        <td>${s.method}</td>
+        <td style="color:var(--muted);font-size:11px">${s.date}</td>
+      </tr>`).join('')}</tbody>
+    </table>
+    <div style="text-align:right;font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:var(--accent)">
+      Total Revenue: $${rev.toFixed(2)} &nbsp;·&nbsp; <span style="color:var(--muted);font-size:14px">${state.sales.length} sale(s)</span>
+    </div>`;
+}
+
+renderSidebar();updateStats();renderSaleTable();
+</script>
+</body>
+</html>
