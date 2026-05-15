@@ -7,6 +7,174 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
 
+</head>
+
+<body>
+
+<div class="topbar">
+  <div class="logo">📦 <span>InvenFlow</span></div>
+
+  <div class="nav">
+    <button class="active" onclick="changePage('add')">Add Product</button>
+    <button onclick="changePage('sale')">Process Sale</button>
+    <button onclick="changePage('history')">History</button>
+  </div>
+</div>
+
+<div class="app">
+
+  <div class="sidebar">
+    <div class="sidebar-title">Inventory</div>
+    <div id="sidebarItems"></div>
+  </div>
+
+  <div class="main">
+
+    <!-- ADD PAGE -->
+    <div class="page active" id="page-add">
+
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Products</div>
+          <div class="stat-value" id="totalProducts">0</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-label">Stock</div>
+          <div class="stat-value" id="totalStock">0</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-label">Revenue</div>
+          <div class="stat-value" id="totalRevenue">$0.00</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Add Product</div>
+
+        <div class="form-grid">
+
+          <div class="group full">
+            <label>Product Name</label>
+            <input type="text" id="nameInput">
+            <div class="error" id="nameErr"></div>
+          </div>
+
+          <div class="group">
+            <label>Price</label>
+            <input type="number" id="priceInput">
+            <div class="error" id="priceErr"></div>
+          </div>
+
+          <div class="group">
+            <label>Stock</label>
+            <input type="number" id="stockInput">
+            <div class="error" id="stockErr"></div>
+          </div>
+
+        </div>
+
+        <div class="buttons">
+          <button class="btn primary" onclick="addItem()">Add</button>
+          <button class="btn secondary" onclick="clearForm()">Clear</button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SALE PAGE -->
+    <div class="page" id="page-sale">
+
+      <div class="panel">
+
+        <div class="panel-title">Products</div>
+
+        <input type="text" id="searchBox" placeholder="Search..." oninput="loadSaleTable()">
+
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Price</th>
+              <th>Stock</th>
+            </tr>
+          </thead>
+
+          <tbody id="saleTable"></tbody>
+        </table>
+
+      </div>
+
+      <div class="panel" id="salePanel" style="display:none">
+
+        <div class="panel-title" id="saleTitle">Sale</div>
+
+        <div class="form-grid">
+
+          <div class="group">
+            <label>Quantity</label>
+            <input type="number" id="qtyInput">
+            <div class="error" id="qtyErr"></div>
+          </div>
+
+          <div class="group">
+            <label>Payment</label>
+
+            <select id="paymentInput">
+              <option value="">Select</option>
+              <option>Cash</option>
+              <option>Credit Card</option>
+              <option>Transfer</option>
+            </select>
+
+            <div class="error" id="paymentErr"></div>
+          </div>
+
+        </div>
+
+        <div class="buttons">
+          <button class="btn primary" onclick="handleSale()">Complete</button>
+          <button class="btn secondary" onclick="cancelSale()">Cancel</button>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- HISTORY -->
+    <div class="page" id="page-history">
+
+      <div class="panel">
+        <div class="panel-title">Sales History</div>
+        <div id="historyArea"></div>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<div class="modal-bg" id="receiptModal">
+
+  <div class="modal">
+
+    <h2 style="font-family:Inter,sans-serif">Receipt</h2>
+
+    <div class="receipt" id="receiptBox"></div>
+
+    <div style="margin-top:16px">
+      <button class="btn primary" onclick="closeReceipt()">Done</button>
+    </div>
+
+  </div>
+
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
 <style>
 :root{
   --bg:#0d0f14;
@@ -364,173 +532,6 @@ select:focus{
   font-size:12px;
 }
 </style>
-</head>
-
-<body>
-
-<div class="topbar">
-  <div class="logo">📦 <span>InvenFlow</span></div>
-
-  <div class="nav">
-    <button class="active" onclick="changePage('add')">Add Product</button>
-    <button onclick="changePage('sale')">Process Sale</button>
-    <button onclick="changePage('history')">History</button>
-  </div>
-</div>
-
-<div class="app">
-
-  <div class="sidebar">
-    <div class="sidebar-title">Inventory</div>
-    <div id="sidebarItems"></div>
-  </div>
-
-  <div class="main">
-
-    <!-- ADD PAGE -->
-    <div class="page active" id="page-add">
-
-      <div class="stats">
-        <div class="stat">
-          <div class="stat-label">Products</div>
-          <div class="stat-value" id="totalProducts">0</div>
-        </div>
-
-        <div class="stat">
-          <div class="stat-label">Stock</div>
-          <div class="stat-value" id="totalStock">0</div>
-        </div>
-
-        <div class="stat">
-          <div class="stat-label">Revenue</div>
-          <div class="stat-value" id="totalRevenue">$0.00</div>
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-title">Add Product</div>
-
-        <div class="form-grid">
-
-          <div class="group full">
-            <label>Product Name</label>
-            <input type="text" id="nameInput">
-            <div class="error" id="nameErr"></div>
-          </div>
-
-          <div class="group">
-            <label>Price</label>
-            <input type="number" id="priceInput">
-            <div class="error" id="priceErr"></div>
-          </div>
-
-          <div class="group">
-            <label>Stock</label>
-            <input type="number" id="stockInput">
-            <div class="error" id="stockErr"></div>
-          </div>
-
-        </div>
-
-        <div class="buttons">
-          <button class="btn primary" onclick="addItem()">Add</button>
-          <button class="btn secondary" onclick="clearForm()">Clear</button>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- SALE PAGE -->
-    <div class="page" id="page-sale">
-
-      <div class="panel">
-
-        <div class="panel-title">Products</div>
-
-        <input type="text" id="searchBox" placeholder="Search..." oninput="loadSaleTable()">
-
-        <table class="table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Name</th>
-              <th>Price</th>
-              <th>Stock</th>
-            </tr>
-          </thead>
-
-          <tbody id="saleTable"></tbody>
-        </table>
-
-      </div>
-
-      <div class="panel" id="salePanel" style="display:none">
-
-        <div class="panel-title" id="saleTitle">Sale</div>
-
-        <div class="form-grid">
-
-          <div class="group">
-            <label>Quantity</label>
-            <input type="number" id="qtyInput">
-            <div class="error" id="qtyErr"></div>
-          </div>
-
-          <div class="group">
-            <label>Payment</label>
-
-            <select id="paymentInput">
-              <option value="">Select</option>
-              <option>Cash</option>
-              <option>Credit Card</option>
-              <option>Transfer</option>
-            </select>
-
-            <div class="error" id="paymentErr"></div>
-          </div>
-
-        </div>
-
-        <div class="buttons">
-          <button class="btn primary" onclick="handleSale()">Complete</button>
-          <button class="btn secondary" onclick="cancelSale()">Cancel</button>
-        </div>
-
-      </div>
-
-    </div>
-
-    <!-- HISTORY -->
-    <div class="page" id="page-history">
-
-      <div class="panel">
-        <div class="panel-title">Sales History</div>
-        <div id="historyArea"></div>
-      </div>
-
-    </div>
-
-  </div>
-
-</div>
-
-<div class="modal-bg" id="receiptModal">
-
-  <div class="modal">
-
-    <h2 style="font-family:Inter,sans-serif">Receipt</h2>
-
-    <div class="receipt" id="receiptBox"></div>
-
-    <div style="margin-top:16px">
-      <button class="btn primary" onclick="closeReceipt()">Done</button>
-    </div>
-
-  </div>
-
-</div>
-
-<div class="toast-wrap" id="toastWrap"></div>
 
 <script>
 
